@@ -1,21 +1,16 @@
-"""Shipping instruction and bill of lading comparison stage."""
+FIELDS = ["shipper", "consignee", "notify_party", "port_of_loading",
+          "port_of_discharge", "container_count", "gross_weight_kg"]
 
-FIELDS = (
-    "shipper",
-    "consignee",
-    "notify_party",
-    "port_of_loading",
-    "port_of_discharge",
-    "container_count",
-    "gross_weight_kg",
-)
+def normalize(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value.strip().upper()
+    return value
 
-
-def compare_documents(si, bl):
-    """Compare normalized document dictionaries by the seven scoring fields."""
-    mismatches = [field for field in FIELDS if si.get(field) != bl.get(field)]
-    return {
-        "status": "OK" if not mismatches else "MISMATCH",
-        "has_defect": bool(mismatches),
-        "defect_fields": mismatches,
-    }
+def compare_documents(si: dict, bl: dict) -> list:
+    mismatches = []
+    for field in FIELDS:
+        if normalize(si.get(field)) != normalize(bl.get(field)):
+            mismatches.append(field)
+    return mismatches

@@ -1,11 +1,8 @@
-.venv/
 venv/
 __pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+*.pyc
 .env
-submission.json
+results.json
+ground_truth.json
+firebase-service-account.json
 .DS_Store
-.vscode/

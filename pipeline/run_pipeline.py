@@ -1,26 +1,20 @@
-"""Command-line entry point for the participant pipeline."""
+from dotenv import load_dotenv
+load_dotenv()
 
 import json
-from pathlib import Path
-
 from loader import Inbox
+from pipeline.decide import process_email
 
-
-def run(source="data"):
-    inbox = Inbox(source)
-    return {
-        email["email_id"]: {
-            "category": "GENERAL",
-            "status": None,
-            "review_reason": None,
-            "has_defect": False,
-            "defect_fields": [],
-        }
-        for email in inbox
-    }
-
+def main():
+    inbox = Inbox("data")
+    results = {}
+    for email in inbox:
+        result = process_email(email, inbox)
+        results[email["email_id"]] = result
+        print(f"{email['email_id']}: {result['status']}")
+    with open("results.json", "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"\nDone — {len(results)} emails processed -> results.json")
 
 if __name__ == "__main__":
-    output = Path("submission.json")
-    output.write_text(json.dumps(run(), indent=2) + "\n")
-    print(f"Wrote {output}")
+    main()

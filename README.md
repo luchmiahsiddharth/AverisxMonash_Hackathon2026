@@ -1,37 +1,19 @@
 # SDOC Hackathon
 
-A Python workspace for classifying shipping-document emails and comparing
-shipping instructions with draft bills of lading.
-
 ## Setup
+1. python3 -m venv venv && source venv/bin/activate
+2. pip install -r requirements.txt
+3. cp .env.example .env, then add your real API key
 
-```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
+## Run the pipeline
+python3 -m pipeline.run_pipeline
+→ creates results.json
 
-The participant dataset is under `data/`. The protected `ground_truth.json` is
-kept at the project root for local scoring and is not served by the API unless
-explicitly enabled.
+## Score it locally
+python3 reference/score_cli.py results.json --ground-truth ground_truth.json
 
-## Run the starter pipeline
+## Run the server
+python3 -m uvicorn server.main:app --reload --port 8000
 
-```powershell
-python -m pipeline.run_pipeline
-```
-
-## Run the scoring server
-
-```powershell
-uvicorn server.main:app --reload
-```
-
-For the organizer Docker distribution:
-
-```powershell
-docker compose up --build
-```
-
-The pipeline stages live in `pipeline/`; the HTTP service and scoring helpers
-live in `server/`.
+## Open the dashboard
+Open frontend/index.html in a browser (server must already be running)

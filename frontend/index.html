@@ -1,14 +1,36 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SDOC Hackathon</title>
-  </head>
-  <body>
-    <main>
-      <h1>SDOC Hackathon</h1>
-      <p>Shipping document verification workspace.</p>
-    </main>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SDOC Dashboard</title>
+  <style>
+    .OK { color: green; }
+    .MISMATCH { color: orange; }
+    .NEEDS_REVIEW { color: red; font-weight: bold; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border: 1px solid #ccc; padding: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Shipping Document Review</h1>
+  <table id="emailTable">
+    <thead><tr><th>ID</th><th>Subject</th><th>Category</th><th>Status</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    const API_URL = "http://localhost:8000";
+    fetch(`${API_URL}/api/emails`).then(r => r.json()).then(emails => {
+      const tbody = document.querySelector("#emailTable tbody");
+      emails.forEach(e => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${e.email_id}</td><td>${e.subject}</td><td>${e.category}</td><td class="${e.status}">${e.status || ""}</td>`;
+        row.onclick = () => showDetail(e.email_id);
+        tbody.appendChild(row);
+      });
+    });
+    function showDetail(id) {
+      fetch(`${API_URL}/api/emails/${id}`).then(r => r.json())
+        .then(data => alert(JSON.stringify(data.result, null, 2)));
+    }
+  </script>
+</body>
 </html>

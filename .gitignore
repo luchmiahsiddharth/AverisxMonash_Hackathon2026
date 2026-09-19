@@ -6,3 +6,4 @@ results.json
 ground_truth.json
 firebase-service-account.json
 .DS_Store
+.vscode/

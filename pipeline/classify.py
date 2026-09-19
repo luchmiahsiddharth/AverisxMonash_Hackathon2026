@@ -1,4 +1,5 @@
 import anthropic
+from .retry import with_retry
 
 client = anthropic.Anthropic()
 
@@ -14,6 +15,7 @@ SYSTEM_PROMPT = """You sort emails in a shipping operations inbox into exactly o
 
 Reply with ONLY the category name. Nothing else."""
 
+@with_retry()
 def classify_email(email: dict) -> str:
     message = f"Subject: {email['subject']}\n\nBody:\n{email['body']}"
     response = client.messages.create(

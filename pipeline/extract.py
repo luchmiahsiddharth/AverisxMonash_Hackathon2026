@@ -1,6 +1,7 @@
 import anthropic
 import json
 import re
+from .retry import with_retry
 
 client = anthropic.Anthropic()
 
@@ -23,6 +24,7 @@ If a field is genuinely missing from the document, use null for that field.
 Document:
 """
 
+@with_retry()
 def extract_fields(document_text: str):
     response = client.messages.create(
         model="claude-sonnet-5",

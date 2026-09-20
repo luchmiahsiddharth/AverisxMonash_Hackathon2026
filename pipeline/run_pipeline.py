@@ -1,39 +1,50 @@
-from dotenv import load_dotenv
-load_dotenv()
+"""
+run_pipeline.py — Run the full pipeline on all emails and write submission.json.
+"""
 
+import sys
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=ROOT / ".env")
+
 from loader import Inbox
 from pipeline.decide import process_email
 
-MAX_WORKERS = 5  # stays comfortably under Anthropic Tier 1's ~50 requests/minute
+DATA_ROOT = ROOT / "data"
+OUTPUT = ROOT / "submission.json"
+
 
 def main():
-    inbox = Inbox("data")
-    emails = list(inbox)
-    results = {}
+    inbox = Inbox(str(DATA_ROOT))
+    emails = inbox.emails()
+    print(f"Processing {len(emails)} emails...", flush=True)
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_id = {
-            executor.submit(process_email, email, inbox): email["email_id"]
-            for email in emails
-        }
-        done = 0
-        for future in as_completed(future_to_id):
-            eid = future_to_id[future]
-            try:
-                results[eid] = future.result()
-            except Exception:
-                # a repeatedly failing email shouldn't crash the whole run —
-                # escalate it instead so you can look at it manually later
-                results[eid] = {"category": "GENERAL", "status": "NEEDS_REVIEW",
-                                 "review_reason": "unreadable", "has_defect": False, "defect_fields": []}
-            done += 1
-            print(f"[{done}/{len(emails)}] {eid}: {results[eid]['status']}")
+    submission = {}
+    for i, email in enumerate(emails, 1):
+        eid = email["email_id"]
+        try:
+            submission[eid] = process_email(email, inbox)
+        except Exception as e:
+            print(f"  !! {eid} failed: {e}", flush=True)
+            submission[eid] = {
+                "category": "GENERAL",
+                "status": "NEEDS_REVIEW",
+                "review_reason": "unreadable",
+                "defect_fields": [],
+                "has_defect": False,
+            }
+        if i % 25 == 0:
+            print(f"  ...{i}/{len(emails)}", flush=True)
 
-    with open("results.json", "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"\nDone — {len(results)} emails processed -> results.json")
+    with open(OUTPUT, "w", encoding="utf-8") as f:
+        json.dump(submission, f, indent=2)
+    print(f"\nWrote {OUTPUT} with {len(submission)} entries", flush=True)
+
 
 if __name__ == "__main__":
     main()

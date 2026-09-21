@@ -64,6 +64,23 @@ def _has_missing_value(fields: dict) -> bool:
     return any(v is None for v in fields.values())
 
 
+def _mismatched_fields(result) -> List[str]:
+    """Pull the list of mismatched field names out of compare_documents().
+
+    compare_documents() returns a DICT:
+        {"mismatched_fields": [...], "differences": {...}, "message": ...}
+    That dict is always truthy, so treating it as a list makes every
+    compared email look like a MISMATCH and fills defect_fields with the
+    dict's keys. Always read the "mismatched_fields" entry instead.
+    A plain list is also accepted, in case compare.py changes again.
+    """
+    if result is None:
+        return []
+    if isinstance(result, dict):
+        return list(result.get("mismatched_fields") or [])
+    return list(result)
+
+
 def _ordered(defects: Iterable[str]) -> List[str]:
     """De-duplicate and put defect fields in the canonical FIELDS order."""
     seen = set(defects)
@@ -108,7 +125,7 @@ def process_email(email: dict, inbox) -> dict:
 
     # 5. Compare.
     try:
-        mismatches = compare_documents(si_fields, bl_fields)
+        mismatches = _mismatched_fields(compare_documents(si_fields, bl_fields))
     except Exception as e:
         print(f"[decide] comparison failed for {email.get('email_id')}: {e}")
         return _needs_review(category, "unreadable")

@@ -180,21 +180,18 @@ header p {
     background: #ffffff;
 }
 
-.search-wrap::before {
+.search-input {
+    position: relative;
+}
+
+.search-input::before {
     content: "⌕";
-
     position: absolute;
-
-    left: 26px;
-
+    left: 12px;
     top: 50%;
-
     transform: translateY(-50%);
-
     color: #8993a0;
-
     pointer-events: none;
-
     font-size: 17px;
 }
 
@@ -787,4 +784,21 @@ code {
     header h1 {
         font-size: 17px;
     }
+}
+
+.filter-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f0f2f4;
+    color: #596572;
+    border: 1px solid #e1e5e8;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.filter-btn:hover { background: #e4e7ea; }
+.filter-btn.active {
+    background: var(--orange);
+    color: white;
+    border-color: var(--orange);
 }

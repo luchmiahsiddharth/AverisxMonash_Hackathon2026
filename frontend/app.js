@@ -77,7 +77,7 @@ let selectedId = null;
 
 let usingDemo = false;
 
-
+let activeFilter = "all";
 /* 
    INITIALISE DASHBOARD
 */
@@ -114,6 +114,10 @@ async function init() {
     renderStats();
 
     renderList(emails);
+    const hero = emails.find(e => e.status === "MISMATCH") || emails[0];
+    if (hero) {
+        selectEmail(hero.email_id);
+    }
 }
 
 
@@ -417,11 +421,7 @@ async function selectEmail(id) {
         result.category === "BL_COMPARISON" &&
         result.status === "MISMATCH"
     ) {
-
-        html += renderMismatch(
-            result.defect_fields || []
-        );
-
+        html += await renderMismatch(id, result.defect_fields || []);
     }
 
 
@@ -505,91 +505,59 @@ async function selectEmail(id) {
    MISMATCH TABLE
 ========================================================= */
 
-function renderMismatch(defectFields) {
-
-    if (!defectFields.length) {
-
-        return `
-
-            <div class="card">
-
-                <h2>
-                    Field comparison
-                </h2>
-
-                <p class="sub">
-
-                    Mismatch flagged,
-                    but no specific fields listed yet.
-
-                </p>
-
-            </div>
-
-        `;
+async function renderMismatch(emailId, defectFields) {
+    // Fetch the SI/BL field values from the backend
+    let data;
+    try {
+        const res = await fetch(`${API_URL}/api/emails/${emailId}/fields`);
+        data = await res.json();
+    } catch (err) {
+        return `<div class="card"><h2>Field comparison</h2>
+            <p class="sub">Could not load field values.</p></div>`;
     }
 
+    if (!data.si || !data.bl) {
+        return `<div class="card"><h2>Field comparison</h2>
+            <p class="sub">Attachments not available for this email.</p></div>`;
+    }
 
-    const rows =
-        defectFields.map(f => `
+    const FIELD_LABELS = {
+        shipper: "Shipper",
+        consignee: "Consignee",
+        notify_party: "Notify Party",
+        port_of_loading: "Port of Loading",
+        port_of_discharge: "Port of Discharge",
+        container_count: "Container Count",
+        gross_weight_kg: "Gross Weight (kg)",
+    };
 
-            <tr class="defect">
-
-                <td>
-                    ${escapeHtml(f)}
-                </td>
-
-                <td colspan="2">
-
-                    Mismatch — see raw result JSON
-                    below for SI/BL values once your
-                    teammate adds a fields endpoint.
-
-                </td>
-
+    const rows = Object.keys(FIELD_LABELS).map(field => {
+        const si = data.si[field] ?? "—";
+        const bl = data.bl[field] ?? "—";
+        const isDefect = defectFields.includes(field);
+        return `
+            <tr class="${isDefect ? "defect" : ""}">
+                <td>${FIELD_LABELS[field]}</td>
+                <td>${escapeHtml(String(si))}</td>
+                <td>${escapeHtml(String(bl))}</td>
             </tr>
-
-        `).join("");
-
+        `;
+    }).join("");
 
     return `
-
         <div class="card">
-
-            <h2>
-                Field comparison
-            </h2>
-
-
+            <h2>Field comparison</h2>
             <table class="fields-table">
-
                 <thead>
-
                     <tr>
-
-                        <th>
-                            Field
-                        </th>
-
-                        <th colspan="2">
-                            Detail
-                        </th>
-
+                        <th>Field</th>
+                        <th>SI value</th>
+                        <th>BL value</th>
                     </tr>
-
                 </thead>
-
-
-                <tbody>
-
-                    ${rows}
-
-                </tbody>
-
+                <tbody>${rows}</tbody>
             </table>
-
         </div>
-
     `;
 }
 
@@ -688,39 +656,23 @@ async function submitReview(id) {
 ========================================================= */
 
 function currentFilteredList() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    let list = emails;
 
-    const q =
-        document
-            .getElementById("searchInput")
-            .value
-            .toLowerCase();
-
-
-    if (!q) {
-
-        return emails;
-
+    if (activeFilter === "BL_COMPARISON") {
+        list = list.filter(e => e.category === "BL_COMPARISON");
+    } else if (activeFilter === "NEEDS_REVIEW") {
+        list = list.filter(e => e.status === "NEEDS_REVIEW");
+    } else if (activeFilter === "MISMATCH") {
+        list = list.filter(e => e.status === "MISMATCH");
     }
 
+    if (!q) return list;
 
-    return emails.filter(e =>
-
-        (e.subject || "")
-            .toLowerCase()
-            .includes(q)
-
-        ||
-
-        (e.category || "")
-            .toLowerCase()
-            .includes(q)
-
-        ||
-
-        (e.status || "")
-            .toLowerCase()
-            .includes(q)
-
+    return list.filter(e =>
+        (e.subject || "").toLowerCase().includes(q) ||
+        (e.category || "").toLowerCase().includes(q) ||
+        (e.status || "").toLowerCase().includes(q)
     );
 }
 
@@ -742,6 +694,15 @@ document
         }
     );
 
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        renderList(currentFilteredList());
+    });
+});
 
 /* =========================================================
    HTML ESCAPING

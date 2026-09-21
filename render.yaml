@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sdoc-verifier
+    runtime: python
+    plan: free
+    buildCommand: |
+      apt-get update && apt-get install -y poppler-utils
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: uvicorn server.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: EXTRACT_USE_LLM_FALLBACK
+        value: "1"
+      - key: EXTRACT_USE_LLM_VISION
+        value: "1"
+      - key: EXTRACT_LLM_MODEL
+        value: "claude-sonnet-5"
+      - key: EXTRACT_LLM_VISION_MODEL
+        value: "claude-sonnet-5"

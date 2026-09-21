@@ -10,8 +10,8 @@ PORT_FIELDS = {"port_of_loading", "port_of_discharge"}
 ENTITY_FIELDS = {"shipper", "consignee", "notify_party"}
  
 GROSS_WEIGHT_TOLERANCE_PCT = 0.005  # 0.5% — absorbs rounding, not real discrepancies
-PORT_FUZZY_THRESHOLD = 0.60         # loose: "PORT KLANG" vs "PORT KLANG (WESTPORT)"
-ENTITY_FUZZY_THRESHOLD = 0.90       # strict: real different companies must NOT collapse together
+PORT_FUZZY_THRESHOLD = 0.85         # loose: "PORT KLANG" vs "PORT KLANG (WESTPORT)"
+ENTITY_FUZZY_THRESHOLD = 0.95       # strict: real different companies must NOT collapse together
  
 # ---------------------------------------------------------------------------
 # Entity pool from the provided synonym library. Adjust the import path/name
